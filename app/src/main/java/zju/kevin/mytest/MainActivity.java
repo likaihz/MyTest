@@ -12,8 +12,7 @@ import android.widget.Button;
 
 import zju.kevin.mytest.fragment.AddressFragment;
 import zju.kevin.mytest.fragment.FindFragment;
-import zju.kevin.mytest.fragment.MeFragment;
-import zju.kevin.mytest.fragment.WeiXinFragment;
+import zju.kevin.mytest.fragment.MenuFragment;
 
 public class MainActivity extends FragmentActivity {
     private static FragmentManager fMgr;
@@ -33,7 +32,7 @@ public class MainActivity extends FragmentActivity {
      */
     private void initFragment() {
         FragmentTransaction ft = fMgr.beginTransaction();
-        WeiXinFragment weiXinFragment = new WeiXinFragment();
+        MenuFragment weiXinFragment = new MenuFragment();
         ft.add(R.id.fragmentRoot, weiXinFragment, "weiXinFragment");
         ft.addToBackStack("weiXinFragment");
         ft.commit();
@@ -48,7 +47,7 @@ public class MainActivity extends FragmentActivity {
             @Override
             public void onClick(View v) {
                 // TODO Auto-generated method stub
-                if(fMgr.findFragmentByTag("weiXinFragment")!=null && fMgr.findFragmentByTag("weiXinFragment").isVisible()) {
+                if(fMgr.findFragmentByTag("MenuFragment")!=null && fMgr.findFragmentByTag("MenuFragment").isVisible()) {
                     return;
                 }
                 ((Button)findViewById(R.id.rbMenu)).setTextColor(Color.WHITE);
