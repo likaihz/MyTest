@@ -1,12 +1,14 @@
 /*test github*/
 package zju.kevin.mytest;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 
 import zju.kevin.mytest.fragment.AddressFragment;
 import zju.kevin.mytest.fragment.FindFragment;
@@ -35,6 +37,7 @@ public class MainActivity extends FragmentActivity {
         ft.add(R.id.fragmentRoot, weiXinFragment, "weiXinFragment");
         ft.addToBackStack("weiXinFragment");
         ft.commit();
+        ((Button)findViewById(R.id.rbMenu)).setTextColor(Color.WHITE);
     }
     /**
      * 处理底部点击事件
@@ -48,6 +51,10 @@ public class MainActivity extends FragmentActivity {
                 if(fMgr.findFragmentByTag("weiXinFragment")!=null && fMgr.findFragmentByTag("weiXinFragment").isVisible()) {
                     return;
                 }
+                ((Button)findViewById(R.id.rbMenu)).setTextColor(Color.WHITE);
+                ((Button)findViewById(R.id.rbOrder)).setTextColor(0xFF696969);
+                ((Button)findViewById(R.id.rbRestaurant)).setTextColor(0xFF696969);
+
                 popAllFragmentsExceptTheBottomOne();
 
             }
@@ -65,6 +72,10 @@ public class MainActivity extends FragmentActivity {
                 ft.addToBackStack("AddressFragment");
                 ft.commit();
 
+                ((Button)findViewById(R.id.rbMenu)).setTextColor(0xFF696969);
+                ((Button)findViewById(R.id.rbOrder)).setTextColor(Color.WHITE);
+                ((Button)findViewById(R.id.rbRestaurant)).setTextColor(0xFF696969);
+
             }
         });
         findViewById(R.id.rbRestaurant).setOnClickListener(new OnClickListener() {
@@ -79,6 +90,10 @@ public class MainActivity extends FragmentActivity {
                 ft.add(R.id.fragmentRoot, sf, "AddressFragment");
                 ft.addToBackStack("FindFragment");
                 ft.commit();
+
+                ((Button)findViewById(R.id.rbMenu)).setTextColor(0xFF696969);
+                ((Button)findViewById(R.id.rbOrder)).setTextColor(0xFF696969);
+                ((Button)findViewById(R.id.rbRestaurant)).setTextColor(Color.WHITE);
             }
         });
         /*findViewById(R.id.rbMe).setOnClickListener(new OnClickListener() {
