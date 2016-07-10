@@ -10,8 +10,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 
-import zju.kevin.mytest.fragment.AddressFragment;
-import zju.kevin.mytest.fragment.FindFragment;
+import zju.kevin.mytest.fragment.OrderFragment;
+import zju.kevin.mytest.fragment.RestaurantFragment;
 import zju.kevin.mytest.fragment.MenuFragment;
 
 public class MainActivity extends FragmentActivity {
@@ -32,9 +32,9 @@ public class MainActivity extends FragmentActivity {
      */
     private void initFragment() {
         FragmentTransaction ft = fMgr.beginTransaction();
-        MenuFragment weiXinFragment = new MenuFragment();
-        ft.add(R.id.fragmentRoot, weiXinFragment, "weiXinFragment");
-        ft.addToBackStack("weiXinFragment");
+        MenuFragment menuFragment = new MenuFragment();
+        ft.add(R.id.fragmentRoot, menuFragment, "menuFragment");
+        ft.addToBackStack("menuFragment");
         ft.commit();
         ((Button)findViewById(R.id.rbMenu)).setTextColor(Color.WHITE);
     }
@@ -47,7 +47,7 @@ public class MainActivity extends FragmentActivity {
             @Override
             public void onClick(View v) {
                 // TODO Auto-generated method stub
-                if(fMgr.findFragmentByTag("MenuFragment")!=null && fMgr.findFragmentByTag("MenuFragment").isVisible()) {
+                if(fMgr.findFragmentByTag("menuFragment")!=null && fMgr.findFragmentByTag("menuFragment").isVisible()) {
                     return;
                 }
                 ((Button)findViewById(R.id.rbMenu)).setTextColor(Color.WHITE);
@@ -65,10 +65,10 @@ public class MainActivity extends FragmentActivity {
                 // TODO Auto-generated method stub
                 popAllFragmentsExceptTheBottomOne();
                 FragmentTransaction ft = fMgr.beginTransaction();
-                ft.hide(fMgr.findFragmentByTag("weiXinFragment"));
-                AddressFragment sf = new AddressFragment();
-                ft.add(R.id.fragmentRoot, sf, "AddressFragment");
-                ft.addToBackStack("AddressFragment");
+                ft.hide(fMgr.findFragmentByTag("menuFragment"));
+                OrderFragment of = new OrderFragment();
+                ft.add(R.id.fragmentRoot, of, "orderFragment");
+                ft.addToBackStack("orderFragment");
                 ft.commit();
 
                 ((Button)findViewById(R.id.rbMenu)).setTextColor(0xFF696969);
@@ -77,6 +77,7 @@ public class MainActivity extends FragmentActivity {
 
             }
         });
+
         findViewById(R.id.rbRestaurant).setOnClickListener(new OnClickListener() {
 
             @Override
@@ -84,10 +85,10 @@ public class MainActivity extends FragmentActivity {
                 // TODO Auto-generated method stub
                 popAllFragmentsExceptTheBottomOne();
                 FragmentTransaction ft = fMgr.beginTransaction();
-                ft.hide(fMgr.findFragmentByTag("weiXinFragment"));
-                FindFragment sf = new FindFragment();
-                ft.add(R.id.fragmentRoot, sf, "AddressFragment");
-                ft.addToBackStack("FindFragment");
+                ft.hide(fMgr.findFragmentByTag("menuFragment"));
+                RestaurantFragment rf = new RestaurantFragment();
+                ft.add(R.id.fragmentRoot, rf, "restaurantFragment");
+                ft.addToBackStack("restaurantFragment");
                 ft.commit();
 
                 ((Button)findViewById(R.id.rbMenu)).setTextColor(0xFF696969);
@@ -95,20 +96,7 @@ public class MainActivity extends FragmentActivity {
                 ((Button)findViewById(R.id.rbRestaurant)).setTextColor(Color.WHITE);
             }
         });
-        /*findViewById(R.id.rbMe).setOnClickListener(new OnClickListener() {
 
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                popAllFragmentsExceptTheBottomOne();
-                FragmentTransaction ft = fMgr.beginTransaction();
-                ft.hide(fMgr.findFragmentByTag("weiXinFragment"));
-                MeFragment sf = new MeFragment();
-                ft.add(R.id.fragmentRoot, sf, "MeFragment");
-                ft.addToBackStack("MeFragment");
-                ft.commit();
-            }
-        });*/
     }
 
     /**

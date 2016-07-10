@@ -9,18 +9,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-public class AddressFragment extends Fragment{
+public class RestaurantFragment extends Fragment{
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.address_fragment, container, false);
+		return inflater.inflate(R.layout.restaurant_fragment, container, false);
 	}
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onActivityCreated(savedInstanceState);
-		((TextView)getView().findViewById(R.id.tvTop)).setText("ͨѶ¼");
+		((TextView)getView().findViewById(R.id.tvTop)).setText("我的餐厅");
 	}
 }
