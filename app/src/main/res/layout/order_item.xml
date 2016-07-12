@@ -72,17 +72,18 @@
          android:layout_width="match_parent"
          android:layout_height="wrap_content"
          android:orientation="horizontal"
+         android:gravity="right"
          android:id="@+id/button_bar">
          <Button
              android:layout_width="wrap_content"
              android:layout_height="match_parent"
              android:text="确认"
-             android:id="@+id/confirm_order"/>
-         <Button
-             android:layout_width="wrap_content"
-             android:layout_height="match_parent"
-             android:text="收款"
-             android:id="@+id/charge"/>
+             android:id="@+id/order_btn"/>
+         <!--<Button-->
+             <!--android:layout_width="wrap_content"-->
+             <!--android:layout_height="match_parent"-->
+             <!--android:text="收款"-->
+             <!--android:id="@+id/charge"/>-->
 
      </LinearLayout>
 
