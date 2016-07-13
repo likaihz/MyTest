@@ -61,4 +61,9 @@ public class QRCodeActivity extends Activity {
         }
         catch (WriterException e){return null;}
     }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+    }
 }
