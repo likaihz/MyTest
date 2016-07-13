@@ -36,13 +36,8 @@ public class MenuFragment extends ListFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        final String[] from = new String[]{"name", "price", "img"};
-        final int[] to = new int[]{R.id.dish_name, R.id.dish_price, R.id.dish_img};
         Log.i(TAG, "--------onCreate");
 
-//        SimpleAdapter adapter=new SimpleAdapter(this.getActivity(),
-//                getData(), R.layout.menu_item, from, to);
-//        this.setListAdapter(adapter);
         data=getData();
         MenuItemAdapter adapter = new MenuItemAdapter(getActivity());
         setListAdapter(adapter);
@@ -90,7 +85,6 @@ public class MenuFragment extends ListFragment {
 
         private LayoutInflater mInflater = null;
         MenuItemAdapter(Context context){
-            //this.mInflater = LayoutInflater.from(context);
             super();
             mInflater = (LayoutInflater) context
                     .getSystemService(Context.LAYOUT_INFLATER_SERVICE);

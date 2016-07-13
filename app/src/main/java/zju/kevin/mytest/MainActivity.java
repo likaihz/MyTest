@@ -45,6 +45,9 @@ public class MainActivity extends Activity {
         ft.addToBackStack("menuFragment");
         ft.commit();
         ((Button)findViewById(R.id.rbMenu)).setTextColor(Color.WHITE);
+        ((Button)findViewById(R.id.rbOrder)).setTextColor(0xFF696969);
+        ((Button)findViewById(R.id.rbRestaurant)).setTextColor(0xFF696969);
+
     }
     /**
      * 处理底部点击事件
