@@ -43,6 +43,7 @@ public class MenuFragment extends ListFragment{
         public void handleMessage(Message msg){
             if(msg.what==1){
                 mThread.stop();
+                getData();
                 adapter.notifyDataSetChanged();
                 return;
             }
@@ -70,7 +71,6 @@ public class MenuFragment extends ListFragment{
                 @Override
                 public void run() {
                     getDishes();
-                    getData();
                     Message msg = new Message();
                     msg.what=1;
                     handler.sendMessage(msg);
@@ -93,6 +93,7 @@ public class MenuFragment extends ListFragment{
             map.put("name", dish.Name);
             map.put("price", dish.Price);
             map.put("img", dish.Image);
+            data.add(map);
         }
 //        Map<String, Object> map = new HashMap<String, Object>();
 //        map.put("name", "饺子");

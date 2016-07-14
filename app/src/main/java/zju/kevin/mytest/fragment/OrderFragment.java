@@ -2,11 +2,14 @@ package zju.kevin.mytest.fragment;
 
 import zju.kevin.mytest.QRCodeActivity;
 import zju.kevin.mytest.R;
+import zju.kevin.mytest.StreamTool;
 
 import android.app.ListFragment;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,15 +19,37 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.StringTokenizer;
 
 public class OrderFragment extends ListFragment {
 
 	private String TAG = OrderFragment.class.getName();
-    private List<Map<String, Object>> data;
+    private List<Map<String, Object>> data = new ArrayList<>();
+    private List<Order> orders = new ArrayList<>();
+    private Thread mThread;
+    OrderItemAdapter adapter;
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg){
+            if(msg.what == 1){
+                mThread.stop();
+                getData();
+                adapter.notifyDataSetChanged();
+            }
+        }
+    };
+
 	/**
 	 * @描述 在onCreateView中加载布局
 	 * */
@@ -40,10 +65,21 @@ public class OrderFragment extends ListFragment {
 		super.onCreate(savedInstanceState);
 		Log.i(TAG, "--------onCreate");
 
-        data = getData();
-        OrderItemAdapter adapter = new OrderItemAdapter(getActivity());
+        //data = getData();
+        adapter = new OrderItemAdapter(getActivity());
         setListAdapter(adapter);
-
+        if(mThread == null ||!mThread.isAlive()) {
+            mThread = new Thread() {
+                @Override
+                public void run() {
+                    getOrders();
+                    Message msg = new Message();
+                    msg.what = 1;
+                    handler.sendMessage(msg);
+                }
+            };
+            mThread.run();
+        }
 	}
 
 	@Override
@@ -63,46 +99,56 @@ public class OrderFragment extends ListFragment {
 	}
 
 
-    private List<Map<String, Object>> getData() {
-        List<Map<String, Object>> list=new ArrayList<Map<String, Object>>();
-
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("order_id", "10000000");
-        map.put("name", "shabi");
-        map.put("contact", "10086");
-        map.put("order_price",105.0);
-        map.put("order_time", "2016-07-10 19:00");
-        list.add(map);
-        map = new HashMap<String, Object>();
-        map.put("order_id", "10000000");
-        map.put("name", "shabi");
-        map.put("contact", "10086");
-        map.put("order_price",105.0);
-        map.put("order_time", "2016-07-10 19:00");
-        list.add(map);
-        map = new HashMap<String, Object>();
-        map.put("order_id", "10000000");
-        map.put("name", "shabi");
-        map.put("contact", "10086");
-        map.put("order_price",105.0);
-        map.put("order_time", "2016-07-10 19:00");
-        list.add(map);
-        map = new HashMap<String, Object>();
-        map.put("order_id", "10000000");
-        map.put("name", "shabi");
-        map.put("contact", "10086");
-        map.put("order_price",105.0);
-        map.put("order_time", "2016-07-10 19:00");
-        list.add(map);
-        map = new HashMap<String, Object>();
-        map.put("order_id", "10000000");
-        map.put("name", "shabi");
-        map.put("contact", "10086");
-        map.put("order_price",105.0);
-        map.put("order_time", "2016-07-10 19:00");
-        list.add(map);
-
-        return list;
+    private void getData() {
+//        List<Map<String, Object>> list=new ArrayList<Map<String, Object>>();
+//
+//        Map<String, Object> map = new HashMap<String, Object>();
+//        map.put("order_id", "10000000");
+//        map.put("name", "shabi");
+//        map.put("contact", "10086");
+//        map.put("order_price",105.0);
+//        map.put("order_time", "2016-07-10 19:00");
+//        list.add(map);
+//        map = new HashMap<String, Object>();
+//        map.put("order_id", "10000000");
+//        map.put("name", "shabi");
+//        map.put("contact", "10086");
+//        map.put("order_price",105.0);
+//        map.put("order_time", "2016-07-10 19:00");
+//        list.add(map);
+//        map = new HashMap<String, Object>();
+//        map.put("order_id", "10000000");
+//        map.put("name", "shabi");
+//        map.put("contact", "10086");
+//        map.put("order_price",105.0);
+//        map.put("order_time", "2016-07-10 19:00");
+//        list.add(map);
+//        map = new HashMap<String, Object>();
+//        map.put("order_id", "10000000");
+//        map.put("name", "shabi");
+//        map.put("contact", "10086");
+//        map.put("order_price",105.0);
+//        map.put("order_time", "2016-07-10 19:00");
+//        list.add(map);
+//        map = new HashMap<String, Object>();
+//        map.put("order_id", "10000000");
+//        map.put("name", "shabi");
+//        map.put("contact", "10086");
+//        map.put("order_price",105.0);
+//        map.put("order_time", "2016-07-10 19:00");
+//        list.add(map);
+//
+//        return list;
+        if(orders == null) return;
+        for(Order order : orders) {
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("order_id", order.order_id);
+            map.put("name", order.name);
+            map.put("contact", order.contact);
+            map.put("order_price", order.order_price);
+            map.put("order_time", order.order_time);
+            data.add(map);
+        }
     }
 
 	@Override
@@ -112,6 +158,27 @@ public class OrderFragment extends ListFragment {
 
 	}
 
+    //在工作线程中调用
+    public void getOrders() {
+        try{
+            URL url = new URL("");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            InputStream in = conn.getInputStream();
+            JSONArray array = new JSONArray(StreamTool.readInputStream(in));
+            int len = array.length();
+            for(int i = 0; i < len; i++){
+                JSONObject object = array.getJSONObject(i);
+                //这里要改！！不知道JSON中img域实际名称
+                Order order = new Order(object.getString("order_id"), object.getString("name"), object.getString("contact"),
+                                        object.getDouble("order_price"), object.getString("order_time"));
+                orders.add(order);
+            }
+        }
+        catch (Exception e) { return; }
+    }
+
+
 	static class ViewHolder {
         public TextView order_id;
         public TextView name;
@@ -119,6 +186,18 @@ public class OrderFragment extends ListFragment {
         public TextView order_price;
         public TextView order_time;
         public Button btn;
+    }
+
+    class Order {
+        public String order_id;
+        public String name;
+        public String contact;
+        public Double order_price;
+        public String order_time;
+        Order(String i, String n, String c, Double p, String t){
+            order_id = i; name = n; contact = c;
+            order_price = p; order_time = t;
+        }
     }
 
     class OrderItemAdapter extends BaseAdapter{
