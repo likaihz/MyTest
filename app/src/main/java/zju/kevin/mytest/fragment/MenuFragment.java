@@ -1,10 +1,16 @@
 package zju.kevin.mytest.fragment;
 
 import zju.kevin.mytest.R;
+import zju.kevin.mytest.StreamTool;
 
 import android.app.ListFragment;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,15 +20,35 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MenuFragment extends ListFragment {
+public class MenuFragment extends ListFragment{
 
     private String TAG = MenuFragment.class.getName();
-    private List<Map<String, Object>> data;
+    private List<Map<String, Object>> data = new ArrayList<>();
+    private List<Dish> dishes = new ArrayList<>();
+    private Thread mThread;
+    MenuItemAdapter adapter;
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg){
+            if(msg.what==1){
+                mThread.stop();
+                adapter.notifyDataSetChanged();
+                return;
+            }
+        }
+
+    };
     /**
      * @描述 在onCreateView中加载布局
      */
@@ -37,10 +63,21 @@ public class MenuFragment extends ListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "--------onCreate");
-
-        data=getData();
-        MenuItemAdapter adapter = new MenuItemAdapter(getActivity());
+        adapter = new MenuItemAdapter(getActivity());
         setListAdapter(adapter);
+        if(mThread == null ||!mThread.isAlive()){
+            mThread = new Thread(){
+                @Override
+                public void run() {
+                    getDishes();
+                    getData();
+                    Message msg = new Message();
+                    msg.what=1;
+                    handler.sendMessage(msg);
+                }
+            };
+            mThread.run();
+        }
     }
 
     @Override
@@ -49,23 +86,22 @@ public class MenuFragment extends ListFragment {
         super.onListItemClick(l, v, position, id);
     }
 
-
-    private List<Map<String, Object>> getData() {
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("name", "饺子");
-        map.put("price", 20.00);
-        map.put("img", R.drawable.ic_launcher);
-        list.add(map);
-        map = new HashMap<String, Object>();
-        map.put("name", "noodles");
-        map.put("price", 100.00);
-        map.put("img", R.drawable.ic_launcher);
-        list.add(map);
-
-        return list;
-    }
+    private void getData() {
+        if(dishes == null) return;
+        for(Dish dish : dishes) {
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("name", dish.Name);
+            map.put("price", dish.Price);
+            map.put("img", dish.Image);
+        }
+//        Map<String, Object> map = new HashMap<String, Object>();
+//        map.put("name", "饺子");
+//        map.put("price", 20.00);
+//        map.put("img", R.drawable.ic_launcher);
+//        list.add(map);
+//
+//        return list;
+   }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -74,13 +110,7 @@ public class MenuFragment extends ListFragment {
 
     }
 
-    static class ViewHolder {
-        public ImageView img;
-        public TextView price;
-        public TextView name;
-        public ImageView del;
-        public ImageView edit;
-    }
+
     public class MenuItemAdapter extends BaseAdapter {
 
         private LayoutInflater mInflater = null;
@@ -120,12 +150,13 @@ public class MenuFragment extends ListFragment {
                 convertView.setTag(holder);
             }
             else holder = (ViewHolder)convertView.getTag();
-
-            holder.img.setImageResource((Integer)data.get(position).get("img"));
-            holder.price.setText(String.valueOf(data.get(position).get("price")));
-            holder.name.setText((String)data.get(position).get("name"));
-            holder.del.setOnClickListener(new DelIconListener(position));
-            holder.edit.setOnClickListener(new EditIconListener(position));
+            if(!data.isEmpty()){
+                holder.img.setImageURI((Uri)data.get(position).get("img"));
+                holder.price.setText(String.valueOf(data.get(position).get("price")));
+                holder.name.setText((String)data.get(position).get("name"));
+                holder.del.setOnClickListener(new DelIconListener(position));
+                holder.edit.setOnClickListener(new EditIconListener(position));
+            }
 
             return convertView;
         }
@@ -153,5 +184,48 @@ public class MenuFragment extends ListFragment {
                 Log.i("","Click on edit icon!");
             }
         }
+    }
+
+    //在工作线程中调用！
+    private void getDishes() {
+        //请求数据！！！
+        try {
+            //List<Dish> dishes = new ArrayList<>();
+            URL url = new URL("");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            InputStream in = conn.getInputStream();
+            JSONArray array = new JSONArray(StreamTool.readInputStream(in));
+            int len = array.length();
+            for(int i = 0; i < len; i++){
+                JSONObject object = array.getJSONObject(i);
+                //这里要改！！不知道JSON中img域实际名称
+                Bitmap bmp = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), Uri.parse(object.getString("img")));
+                Dish dish = new Dish(bmp, object.getString("name"),object.getDouble("price"));
+                dishes.add(dish);
+            }
+            return;
+        }
+
+        catch (Exception e) { return;}
+    }
+
+    private class Dish {
+        public Bitmap Image;
+        public String Name;
+        public Double Price;
+        Dish(Bitmap bmp, String name, Double price){
+            Image = bmp;
+            Name = name;
+            Price = price;
+        }
+    }
+
+    static class ViewHolder {
+        public ImageView img;
+        public TextView price;
+        public TextView name;
+        public ImageView del;
+        public ImageView edit;
     }
 }
