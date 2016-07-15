@@ -29,8 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.StringTokenizer;
+
 
 public class OrderFragment extends ListFragment {
 
@@ -109,36 +108,8 @@ public class OrderFragment extends ListFragment {
 //        map.put("order_price",105.0);
 //        map.put("order_time", "2016-07-10 19:00");
 //        list.add(map);
-//        map = new HashMap<String, Object>();
-//        map.put("order_id", "10000000");
-//        map.put("name", "shabi");
-//        map.put("contact", "10086");
-//        map.put("order_price",105.0);
-//        map.put("order_time", "2016-07-10 19:00");
-//        list.add(map);
-//        map = new HashMap<String, Object>();
-//        map.put("order_id", "10000000");
-//        map.put("name", "shabi");
-//        map.put("contact", "10086");
-//        map.put("order_price",105.0);
-//        map.put("order_time", "2016-07-10 19:00");
-//        list.add(map);
-//        map = new HashMap<String, Object>();
-//        map.put("order_id", "10000000");
-//        map.put("name", "shabi");
-//        map.put("contact", "10086");
-//        map.put("order_price",105.0);
-//        map.put("order_time", "2016-07-10 19:00");
-//        list.add(map);
-//        map = new HashMap<String, Object>();
-//        map.put("order_id", "10000000");
-//        map.put("name", "shabi");
-//        map.put("contact", "10086");
-//        map.put("order_price",105.0);
-//        map.put("order_time", "2016-07-10 19:00");
-//        list.add(map);
-//
 //        return list;
+
         if(orders == null) return;
         for(Order order : orders) {
             Map<String, Object> map = new HashMap<String, Object>();
@@ -147,6 +118,7 @@ public class OrderFragment extends ListFragment {
             map.put("contact", order.contact);
             map.put("order_price", order.order_price);
             map.put("order_time", order.order_time);
+            map.put("confirmed", order.confirmed);
             data.add(map);
         }
     }
@@ -169,9 +141,9 @@ public class OrderFragment extends ListFragment {
             int len = array.length();
             for(int i = 0; i < len; i++){
                 JSONObject object = array.getJSONObject(i);
-                //这里要改！！不知道JSON中img域实际名称
+                //这里要改！！不知道JSON中各个域实际名称
                 Order order = new Order(object.getString("order_id"), object.getString("name"), object.getString("contact"),
-                                        object.getDouble("order_price"), object.getString("order_time"));
+                                object.getDouble("order_price"), object.getString("order_time"), object.getInt("confirmed"));
                 orders.add(order);
             }
         }
@@ -186,6 +158,7 @@ public class OrderFragment extends ListFragment {
         public TextView order_price;
         public TextView order_time;
         public Button btn;
+        public Integer confirmed;
     }
 
     class Order {
@@ -194,9 +167,10 @@ public class OrderFragment extends ListFragment {
         public String contact;
         public Double order_price;
         public String order_time;
-        Order(String i, String n, String c, Double p, String t){
+        public Integer confirmed;
+        Order(String i, String n, String c, Double p, String t, int o){
             order_id = i; name = n; contact = c;
-            order_price = p; order_time = t;
+            order_price = p; order_time = t; confirmed = o;
         }
     }
 
@@ -204,7 +178,8 @@ public class OrderFragment extends ListFragment {
         private LayoutInflater mInflater = null;
 
         //confirmed 变量应该动态从数据库获取
-        private boolean confirmed = true;
+        //0为缺省状态，1表示未确认，2表示已确认
+       // private int confirmed = 0;
         OrderItemAdapter(Context context){
             //this.mInflater = LayoutInflater.from(context);
             super();
@@ -249,9 +224,13 @@ public class OrderFragment extends ListFragment {
             holder.contact.setText((String)data.get(position).get("contact"));
             holder.order_price.setText(String.valueOf(data.get(position).get("order_price")));
             holder.order_time.setText((String)data.get(position).get("order_time"));
-            /*btn 要单独处理，如果该订单已经被确认，则btn文字设为收款，否则设为确认*/
-            if(!confirmed) holder.btn.setText("确认订单");
-            else holder.btn.setText("收款");
+            int confirmed = holder.confirmed;
+            /*btn 要单独处理，如果该订单已经被确认，则btn文字设为收款，未确认则设为确认，否则设为不可点击*/
+            switch (confirmed) {
+                case 1: holder.btn.setText("确认订单"); break;
+                case 2: holder.btn.setText("收款"); break;
+                default: holder.btn.setClickable(false); break;
+            }
             holder.btn.setOnClickListener(new OdrBtnListener(position));
 
             return convertView;
@@ -266,14 +245,24 @@ public class OrderFragment extends ListFragment {
             public void onClick(View view)
             {
                 int vid = view.getId();
-                System.out.println("Click on the btn!");
+                int confirmed = (Integer) data.get(position).get("confirmed");
                 Log.i(String.valueOf(vid),"Click on the btn!");
-                if(!confirmed) {
+                if(confirmed == 1) {
+            /*          ==============          */
+            /*          |            |          */
+            /*          |            |          */
+            /*          |  Send info |          */
+            /*          |            |          */
+            /*          |            |          */
+            /*          ==============          */
                     //此处发送确认订单消息
 
-                    confirmed = true;
-                    //刷新该fragment？？
-
+                    confirmed = 2;
+                    //修改状态并刷新listview
+                    Map<String, Object> map = new HashMap<>(data.get(position));
+                    map.put("confirmed", 2);
+                    data.set(position, map);
+                    adapter.notifyDataSetChanged();
                 }
 
                 else{

@@ -1,15 +1,17 @@
 package zju.kevin.mytest.fragment;
 
+import zju.kevin.mytest.EditDish;
 import zju.kevin.mytest.R;
 import zju.kevin.mytest.StreamTool;
 
+import android.app.AlertDialog;
 import android.app.ListFragment;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -30,26 +32,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MenuFragment extends ListFragment{
 
     private String TAG = MenuFragment.class.getName();
     private List<Map<String, Object>> data = new ArrayList<>();
     private List<Dish> dishes = new ArrayList<>();
-    private Thread mThread;
+    //private Thread mThread;
     MenuItemAdapter adapter;
-    Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg){
-            if(msg.what==1){
-                mThread.stop();
-                getData();
-                adapter.notifyDataSetChanged();
-                return;
-            }
-        }
-
-    };
+    private ExecutorService executorService = Executors.newFixedThreadPool(5);
+    Handler handler = new Handler();
     /**
      * @描述 在onCreateView中加载布局
      */
@@ -66,28 +60,34 @@ public class MenuFragment extends ListFragment{
         Log.i(TAG, "--------onCreate");
         adapter = new MenuItemAdapter(getActivity());
         setListAdapter(adapter);
-        if(mThread == null ||!mThread.isAlive()){
-            mThread = new Thread(){
+        //if(mThread == null ||!mThread.isAlive()){
+            //mThread = new Thread(){
+        //引入线程池管理线程
+        executorService.submit(new Runnable() {
                 @Override
                 public void run() {
-                    getDishes();
-                    Message msg = new Message();
-                    msg.what=1;
-                    handler.sendMessage(msg);
+                    getDishes();    //网络数据请求，耗时操作
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            getData();          //处理得到的数据
+                            adapter.notifyDataSetChanged();     //更新UI
+                        }
+                    });
                 }
-            };
-            mThread.run();
-        }
+            //};
+            //mThread.start();
+        });
     }
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        System.out.println("Click On List Item!!!");
+        Log.i("","Click On List Item!!!");
         super.onListItemClick(l, v, position, id);
     }
 
     private void getData() {
-        if(dishes == null) return;
+        if(dishes == null || dishes.isEmpty()) return;
         for(Dish dish : dishes) {
             Map<String, Object> map = new HashMap<String, Object>();
             map.put("name", dish.Name);
@@ -162,27 +162,62 @@ public class MenuFragment extends ListFragment{
             return convertView;
         }
 
-        class DelIconListener implements View.OnClickListener {
-            private int position;
-            DelIconListener(int pos) {position = pos;}
-            @Override
-            public void onClick(View view)
-            {
-                int vid=view.getId();
-                System.out.println("Click on del icon!");
-                Log.i("","Click on del icon!");
-            }
-        }
-
         class EditIconListener implements View.OnClickListener {
             private int position;
             EditIconListener(int pos) {position = pos;}
             @Override
             public void onClick(View view)
             {
+                //点击编辑图标跳转到编辑菜品界面
+                int vid=view.getId();
+                Log.i("","Click on del icon!");
+                Intent intent = new Intent();
+                intent.setClass(getActivity(), EditDish.class);
+                intent.putExtra("dish_name", (String)data.get(position).get("name"));
+                intent.putExtra("dish_price", (Double)data.get(position).get("price"));
+                intent.putExtra("dish_img",(Uri)data.get(position).get("img"));
+                startActivity(intent);
+            }
+        }
+
+        class DelIconListener implements View.OnClickListener {
+            private int position;
+            DelIconListener(int pos) {position = pos;}
+            @Override
+            public void onClick(View view)
+            {
                 int vid = view.getId();
-                System.out.println("Click on edit icon!");
                 Log.i("","Click on edit icon!");
+                //删除菜品行为逻辑
+                //先将按钮设为不可点击
+                view.setClickable(false);
+                //再开启线程，发送删除命令
+                executorService.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        //服务器删除接口
+            /*          ==============          */
+            /*          |            |          */
+            /*          |            |          */
+            /*          |   Delete!  |          */
+            /*          |            |          */
+            /*          |            |          */
+            /*          ==============          */
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                //更新UI
+                                data.remove(position);
+                                adapter.notifyDataSetChanged();
+                                //弹出提示框
+                                new AlertDialog.Builder(getActivity())
+                                                .setMessage("删除成功！")
+                                                .setPositiveButton("确定",null)
+                                                .show();
+                            }
+                        });
+                    }
+                });
             }
         }
     }
