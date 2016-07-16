@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.util.StringBuilderPrinter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,12 +23,21 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +47,7 @@ import java.util.concurrent.Executors;
 
 public class MenuFragment extends ListFragment{
 
+    private String rmail = new String();
     private String TAG = MenuFragment.class.getName();
     private List<Map<String, Object>> data = new ArrayList<>();
     private List<Dish> dishes = new ArrayList<>();
@@ -58,6 +69,7 @@ public class MenuFragment extends ListFragment{
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "--------onCreate");
+        if(getArguments().getString("rmail") != null) rmail = getArguments().getString("rmail");
         adapter = new MenuItemAdapter(getActivity());
         setListAdapter(adapter);
         //if(mThread == null ||!mThread.isAlive()){
@@ -66,7 +78,9 @@ public class MenuFragment extends ListFragment{
         executorService.submit(new Runnable() {
                 @Override
                 public void run() {
+                    Log.i("","In the thread!");
                     getDishes();    //网络数据请求，耗时操作
+                    Log.i("","get dished done!");
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -95,13 +109,6 @@ public class MenuFragment extends ListFragment{
             map.put("img", dish.Image);
             data.add(map);
         }
-//        Map<String, Object> map = new HashMap<String, Object>();
-//        map.put("name", "饺子");
-//        map.put("price", 20.00);
-//        map.put("img", R.drawable.ic_launcher);
-//        list.add(map);
-//
-//        return list;
    }
 
     @Override
@@ -152,7 +159,8 @@ public class MenuFragment extends ListFragment{
             }
             else holder = (ViewHolder)convertView.getTag();
             if(!data.isEmpty()){
-                holder.img.setImageURI((Uri)data.get(position).get("img"));
+                if(data.get(position).get("img")== null) holder.img.setBackgroundResource(R.drawable.ic_launcher);
+                else holder.img.setImageURI((Uri)data.get(position).get("img"));
                 holder.price.setText(String.valueOf(data.get(position).get("price")));
                 holder.name.setText((String)data.get(position).get("name"));
                 holder.del.setOnClickListener(new DelIconListener(position));
@@ -187,7 +195,7 @@ public class MenuFragment extends ListFragment{
             public void onClick(View view)
             {
                 int vid = view.getId();
-                Log.i("","Click on edit icon!");
+                System.out.println("Click on edit icon!");
                 //删除菜品行为逻辑
                 //先将按钮设为不可点击
                 view.setClickable(false);
@@ -196,26 +204,77 @@ public class MenuFragment extends ListFragment{
                     @Override
                     public void run() {
                         //服务器删除接口
-            /*          ==============          */
-            /*          |            |          */
-            /*          |            |          */
-            /*          |   Delete!  |          */
-            /*          |            |          */
-            /*          |            |          */
-            /*          ==============          */
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                //更新UI
-                                data.remove(position);
-                                adapter.notifyDataSetChanged();
-                                //弹出提示框
-                                new AlertDialog.Builder(getActivity())
+                        System.out.println("Delete icon pressed!");
+                        try{
+                            URL url = new URL("http://10.214.11.146/restaurant/r_delmenu.php");
+                            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                            httpURLConnection.setDoOutput(true);
+                            httpURLConnection.setRequestMethod("POST");
+                            httpURLConnection.setConnectTimeout(5000);
+                            httpURLConnection.setReadTimeout(5000);
+                            httpURLConnection.setRequestProperty("Charset", "UTF-8");
+                            httpURLConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                            httpURLConnection.connect();
+
+                            //POST提交删除信息
+                            Map<String, String> map = new HashMap<String, String>();
+                            map.put("rmail",rmail);
+                            map.put("mname",URLEncoder.encode((String)data.get(position).get("name"),"UTF-8"));
+                            //map.put("mname",(String)(data.get(position).get("namne")));
+                            StringBuffer buf = new StringBuffer();
+                            for(Map.Entry<String,String> entry : map.entrySet()){
+                                buf.append(entry.getKey()).append("=")
+                                        .append(URLEncoder.encode(entry.getValue(),"UTF-8")).append("&");
+                                //.append(entry.getValue()).append("&");
+                            }
+                            buf.deleteCharAt(buf.length()-1);
+                            OutputStream outputStream = httpURLConnection.getOutputStream();
+                            if(outputStream !=null){
+                                outputStream.write(buf.toString().getBytes());
+                                outputStream.flush();
+                                outputStream.close();
+
+                                BufferedReader reader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
+                                String json;
+                                StringBuffer sb = new StringBuffer("");
+                                while ((json = reader.readLine()) != null) {
+                                    json = URLDecoder.decode(json, "utf-8");
+                                    sb.append(json);
+                                }
+                                reader.close();
+
+                                json = new String(sb);
+                                System.out.println(json);
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        //更新UI
+                                        data.remove(position);
+                                        adapter.notifyDataSetChanged();
+                                        //弹出提示框
+                                        new AlertDialog.Builder(getActivity())
                                                 .setMessage("删除成功！")
                                                 .setPositiveButton("确定",null)
                                                 .show();
+                                    }
+                                });
                             }
-                        });
+                            else { handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    //更新UI
+//                                    data.remove(position);
+                                    adapter.notifyDataSetChanged();
+                                    //弹出提示框
+                                    new AlertDialog.Builder(getActivity())
+                                            .setMessage("删除失败！")
+                                            .setPositiveButton("确定",null)
+                                            .show();
+                                }
+                            });}
+                        }
+                        catch (Exception e) {System.out.println("Del exception");}
                     }
                 });
             }
@@ -224,28 +283,69 @@ public class MenuFragment extends ListFragment{
 
     //在工作线程中调用！
     private void getDishes() {
+        Log.i("","in getDishes!");
         //请求数据！！！
         try {
-            //List<Dish> dishes = new ArrayList<>();
-            URL url = new URL("");
+            URL url = new URL("http://10.214.11.146/restaurant/rmenu.php");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            conn.setDoOutput(true);
             conn.setRequestMethod("POST");
-            InputStream in = conn.getInputStream();
-            JSONArray array = new JSONArray(StreamTool.readInputStream(in));
-            int len = array.length();
-            for(int i = 0; i < len; i++){
-                JSONObject object = array.getJSONObject(i);
-                //这里要改！！不知道JSON中img域实际名称
-                Bitmap bmp = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), Uri.parse(object.getString("img")));
-                Dish dish = new Dish(bmp, object.getString("name"),object.getDouble("price"));
-                dishes.add(dish);
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            conn.setRequestProperty("Charset", "UTF-8");
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            conn.connect();
+
+            //POST请求
+            Map<String, String> map = new HashMap<>();
+            map.put("rmail",rmail);
+            StringBuffer buf = new StringBuffer();
+            buf.append("rmail").append("=").append(URLEncoder.encode("10086", "UTF-8"));
+            OutputStream outputStream = conn.getOutputStream();
+            outputStream.write(buf.toString().getBytes());
+
+            //InputStream in = conn.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String json;
+            StringBuffer sb = new StringBuffer("");
+            while ((json = reader.readLine()) != null) {
+                json = URLDecoder.decode(json, "utf-8");
+                sb.append(json);
+            }
+            reader.close();
+
+            json = new String(sb);
+            //Log.i("",json);
+            Gson gson = new Gson();
+            //java.lang.reflect.Type type = new TypeToken<JsonBean>() {}.getType();
+            JsonBean jsonBean = gson.fromJson(json, JsonBean.class);
+            if(jsonBean.result.equals("1")){
+                //Log.i("","result");
+                for(JsonBean.J_dish i: jsonBean.menu) {
+                    Bitmap bmp;
+                    if(i.Image.equals("null")) bmp =  null;
+                    else bmp = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), Uri.parse(i.Image));
+                    Dish dish = new Dish(bmp, i.Name, Double.valueOf(i.Price).doubleValue());
+                    dishes.add(dish);
+                }
             }
             return;
         }
 
-        catch (Exception e) { return;}
+        catch (Exception e) {Log.i("","getDishes exception!"); return;}
     }
 
+    public class JsonBean {
+        public List<J_dish> menu;
+        public String result;
+
+        public  class J_dish {
+            public String Name;
+            public String Price;
+            public String Image;
+        }
+    }
     private class Dish {
         public Bitmap Image;
         public String Name;

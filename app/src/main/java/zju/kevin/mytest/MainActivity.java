@@ -5,15 +5,13 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 
-//import android.support.v4.app.Fragment;
-//import android.support.v4.app.FragmentActivity;
-//import android.support.v4.app.FragmentManager;
-//import android.support.v4.app.FragmentTransaction;
+
 import android.app.Fragment;
 //import android.app.FragmentActivity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 //import android.support.v4.app.FragmentActivity;
+import android.os.StrictMode;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -24,10 +22,12 @@ import zju.kevin.mytest.fragment.MenuFragment;
 
 public class MainActivity extends Activity {
     private static FragmentManager fMgr;
+    private String rmail = new String("10086");
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build());
         //获取FragmentManager实例
         fMgr = getFragmentManager();
 
@@ -40,9 +40,16 @@ public class MainActivity extends Activity {
      */
     private void initFragment() {
         FragmentTransaction ft = fMgr.beginTransaction();
+        Bundle bundle = new Bundle();
+        bundle.putString("rmail", rmail);
         MenuFragment menuFragment = new MenuFragment();
+//        OrderFragment orderFragment = new OrderFragment();
+        menuFragment.setArguments(bundle);
         ft.add(R.id.fragmentRoot, menuFragment, "menuFragment");
+
+//        ft.add(R.id.fragmentRoot, orderFragment, "orderFragment");
         ft.addToBackStack("menuFragment");
+        //ft.addToBackStack("orderFragment");
         ft.commit();
         ((Button)findViewById(R.id.rbMenu)).setTextColor(Color.WHITE);
         ((Button)findViewById(R.id.rbOrder)).setTextColor(0xFF696969);

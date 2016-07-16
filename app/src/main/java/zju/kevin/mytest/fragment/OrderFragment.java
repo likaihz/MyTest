@@ -2,7 +2,6 @@ package zju.kevin.mytest.fragment;
 
 import zju.kevin.mytest.QRCodeActivity;
 import zju.kevin.mytest.R;
-import zju.kevin.mytest.StreamTool;
 
 import android.app.ListFragment;
 import android.content.Context;
@@ -19,12 +18,17 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.Gson;
 
+
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,12 +41,13 @@ public class OrderFragment extends ListFragment {
     private List<Map<String, Object>> data = new ArrayList<>();
     private List<Order> orders = new ArrayList<>();
     private Thread mThread;
+    private String rmail = new String("10086");
     OrderItemAdapter adapter;
     Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg){
             if(msg.what == 1){
-                mThread.stop();
+//                mThread.stop();
                 getData();
                 adapter.notifyDataSetChanged();
             }
@@ -71,7 +76,9 @@ public class OrderFragment extends ListFragment {
             mThread = new Thread() {
                 @Override
                 public void run() {
+                    Log.i("","In the mThread");
                     getOrders();
+                    Log.i("", "getOrders complete");
                     Message msg = new Message();
                     msg.what = 1;
                     handler.sendMessage(msg);
@@ -114,7 +121,7 @@ public class OrderFragment extends ListFragment {
         for(Order order : orders) {
             Map<String, Object> map = new HashMap<String, Object>();
             map.put("order_id", order.order_id);
-            map.put("name", order.name);
+            //map.put("name", order.name);
             map.put("contact", order.contact);
             map.put("order_price", order.order_price);
             map.put("order_time", order.order_time);
@@ -133,27 +140,75 @@ public class OrderFragment extends ListFragment {
     //在工作线程中调用
     public void getOrders() {
         try{
-            URL url = new URL("");
+            URL url = new URL("http://10.214.11.146/restaurant/rorder.php");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
             conn.setRequestMethod("POST");
-            InputStream in = conn.getInputStream();
-            JSONArray array = new JSONArray(StreamTool.readInputStream(in));
-            int len = array.length();
-            for(int i = 0; i < len; i++){
-                JSONObject object = array.getJSONObject(i);
-                //这里要改！！不知道JSON中各个域实际名称
-                Order order = new Order(object.getString("order_id"), object.getString("name"), object.getString("contact"),
-                                object.getDouble("order_price"), object.getString("order_time"), object.getInt("confirmed"));
-                orders.add(order);
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            conn.setRequestProperty("Charset", "UTF-8");
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            conn.connect();
+
+            //POST请求
+            Map<String, String> map = new HashMap<>();
+            map.put("rmail",rmail);
+            StringBuffer buf = new StringBuffer();
+            buf.append("rmail").append("=").append(URLEncoder.encode("10086", "UTF-8"));
+            OutputStream outputStream = conn.getOutputStream();
+            outputStream.write(buf.toString().getBytes());
+
+//            OutputStream outStrm = conn.getOutputStream();
+//            ObjectOutputStream objOutputStrm = new ObjectOutputStream(outStrm);
+//            objOutputStrm.writeObject(new String("10086"));
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String json;
+            StringBuffer sb = new StringBuffer("");
+            while ((json = reader.readLine()) != null) {
+                json = URLDecoder.decode(json, "utf-8");
+                sb.append(json);
+            }
+            reader.close();
+
+            json = new String(sb);
+
+            System.out.println(json);
+            Gson gson = new Gson();
+            JsonBean jsonBean = gson.fromJson(json, JsonBean.class);
+            if(jsonBean.result.equals("1")){
+                //Log.i("","result");
+                for(JsonBean.J_order i: jsonBean.order) {
+                    int confirmed=1;
+                    if(i.ispaid.equals("0") && i.issure.equals("0")) confirmed = 1;
+                    else if(i.issure.equals("1")) confirmed = 2;
+                    else if(i.issure.equals("3")) confirmed = 3;            //已支付
+
+                    Order order = new Order(i.id, i.mail, Double.valueOf(i.t_price).doubleValue(), i.time, confirmed);
+                    orders.add(order);
+                }
             }
         }
-        catch (Exception e) { return; }
+        catch (Exception e) { Log.i("thread expection!","1"); return; }
     }
 
+    public class JsonBean {
+        public List<J_order> order;
+        public String result;
+
+        public class J_order {
+            public String id;
+            public String mail;
+            public String time;
+            public String t_price;
+            public String ispaid;
+            public String issure;
+        }
+    }
 
 	static class ViewHolder {
         public TextView order_id;
-        public TextView name;
+        //public TextView name;
         public TextView contact;
         public TextView order_price;
         public TextView order_time;
@@ -163,13 +218,13 @@ public class OrderFragment extends ListFragment {
 
     class Order {
         public String order_id;
-        public String name;
+        //public String name;
         public String contact;
         public Double order_price;
         public String order_time;
         public Integer confirmed;
-        Order(String i, String n, String c, Double p, String t, int o){
-            order_id = i; name = n; contact = c;
+        Order(String i, String c, Double p, String t, int o){
+            order_id = i;  contact = c;
             order_price = p; order_time = t; confirmed = o;
         }
     }
@@ -208,7 +263,7 @@ public class OrderFragment extends ListFragment {
                 holder = new ViewHolder();
                 //根据自定义的Item布局加载布局
                 convertView = mInflater.inflate(R.layout.order_item, null);
-                holder.name = (TextView)convertView.findViewById(R.id.name);
+                //holder.name = (TextView)convertView.findViewById(R.id.name);
                 holder.order_id = (TextView)convertView.findViewById(R.id.order_id);
                 holder.contact =(TextView)convertView.findViewById(R.id.contact);
                 holder.order_price = (TextView)convertView.findViewById(R.id.order_price);
@@ -220,7 +275,7 @@ public class OrderFragment extends ListFragment {
             else holder = (ViewHolder)convertView.getTag();
 
             holder.order_id.setText((String)data.get(position).get("order_id"));
-            holder.name.setText((String)data.get(position).get("name"));
+            //holder.name.setText((String)data.get(position).get("name"));
             holder.contact.setText((String)data.get(position).get("contact"));
             holder.order_price.setText(String.valueOf(data.get(position).get("order_price")));
             holder.order_time.setText((String)data.get(position).get("order_time"));
