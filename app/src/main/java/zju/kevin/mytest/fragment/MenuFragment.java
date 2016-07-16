@@ -2,7 +2,6 @@ package zju.kevin.mytest.fragment;
 
 import zju.kevin.mytest.EditDish;
 import zju.kevin.mytest.R;
-import zju.kevin.mytest.StreamTool;
 
 import android.app.AlertDialog;
 import android.app.ListFragment;
@@ -14,7 +13,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.util.StringBuilderPrinter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,15 +22,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -47,11 +39,11 @@ import java.util.concurrent.Executors;
 
 public class MenuFragment extends ListFragment{
 
+    private String urlstr = "http://139.129.6.166/proj/restaurant/";
     private String rmail = new String();
     private String TAG = MenuFragment.class.getName();
     private List<Map<String, Object>> data = new ArrayList<>();
     private List<Dish> dishes = new ArrayList<>();
-    //private Thread mThread;
     MenuItemAdapter adapter;
     private ExecutorService executorService = Executors.newFixedThreadPool(5);
     Handler handler = new Handler();
@@ -72,25 +64,21 @@ public class MenuFragment extends ListFragment{
         if(getArguments().getString("rmail") != null) rmail = getArguments().getString("rmail");
         adapter = new MenuItemAdapter(getActivity());
         setListAdapter(adapter);
-        //if(mThread == null ||!mThread.isAlive()){
-            //mThread = new Thread(){
         //引入线程池管理线程
         executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Log.i("","In the thread!");
-                    getDishes();    //网络数据请求，耗时操作
-                    Log.i("","get dished done!");
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            getData();          //处理得到的数据
-                            adapter.notifyDataSetChanged();     //更新UI
-                        }
-                    });
-                }
-            //};
-            //mThread.start();
+            @Override
+            public void run() {
+                Log.i("","In the thread!");
+                getDishes();    //网络数据请求，耗时操作
+                Log.i("","get dished done!");
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getData();          //处理得到的数据
+                        adapter.notifyDataSetChanged();     //更新UI
+                    }
+                });
+            }
         });
     }
 
@@ -120,7 +108,6 @@ public class MenuFragment extends ListFragment{
 
 
     public class MenuItemAdapter extends BaseAdapter {
-
         private LayoutInflater mInflater = null;
         MenuItemAdapter(Context context){
             super();
@@ -166,7 +153,6 @@ public class MenuFragment extends ListFragment{
                 holder.del.setOnClickListener(new DelIconListener(position));
                 holder.edit.setOnClickListener(new EditIconListener(position));
             }
-
             return convertView;
         }
 
@@ -178,12 +164,13 @@ public class MenuFragment extends ListFragment{
             {
                 //点击编辑图标跳转到编辑菜品界面
                 int vid=view.getId();
-                Log.i("","Click on del icon!");
+                Log.i("","Click on edit icon!");
                 Intent intent = new Intent();
                 intent.setClass(getActivity(), EditDish.class);
                 intent.putExtra("dish_name", (String)data.get(position).get("name"));
                 intent.putExtra("dish_price", (Double)data.get(position).get("price"));
                 intent.putExtra("dish_img",(Uri)data.get(position).get("img"));
+                intent.putExtra("rmail", rmail);
                 startActivity(intent);
             }
         }
@@ -195,7 +182,7 @@ public class MenuFragment extends ListFragment{
             public void onClick(View view)
             {
                 int vid = view.getId();
-                System.out.println("Click on edit icon!");
+                System.out.println("Click on del icon!");
                 //删除菜品行为逻辑
                 //先将按钮设为不可点击
                 view.setClickable(false);
@@ -206,7 +193,7 @@ public class MenuFragment extends ListFragment{
                         //服务器删除接口
                         System.out.println("Delete icon pressed!");
                         try{
-                            URL url = new URL("http://10.214.11.146/restaurant/r_delmenu.php");
+                            URL url = new URL(urlstr+"r_delmenu.php");
                             HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                             httpURLConnection.setDoOutput(true);
                             httpURLConnection.setRequestMethod("POST");
@@ -286,7 +273,7 @@ public class MenuFragment extends ListFragment{
         Log.i("","in getDishes!");
         //请求数据！！！
         try {
-            URL url = new URL("http://10.214.11.146/restaurant/rmenu.php");
+            URL url = new URL(urlstr+"rmenu.php");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setDoOutput(true);
@@ -301,11 +288,10 @@ public class MenuFragment extends ListFragment{
             Map<String, String> map = new HashMap<>();
             map.put("rmail",rmail);
             StringBuffer buf = new StringBuffer();
-            buf.append("rmail").append("=").append(URLEncoder.encode("10086", "UTF-8"));
+            buf.append("rmail").append("=").append(URLEncoder.encode(rmail, "UTF-8"));
             OutputStream outputStream = conn.getOutputStream();
             outputStream.write(buf.toString().getBytes());
 
-            //InputStream in = conn.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             String json;
             StringBuffer sb = new StringBuffer("");
@@ -318,7 +304,6 @@ public class MenuFragment extends ListFragment{
             json = new String(sb);
             //Log.i("",json);
             Gson gson = new Gson();
-            //java.lang.reflect.Type type = new TypeToken<JsonBean>() {}.getType();
             JsonBean jsonBean = gson.fromJson(json, JsonBean.class);
             if(jsonBean.result.equals("1")){
                 //Log.i("","result");
@@ -346,6 +331,7 @@ public class MenuFragment extends ListFragment{
             public String Image;
         }
     }
+
     private class Dish {
         public Bitmap Image;
         public String Name;

@@ -33,26 +33,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class OrderFragment extends ListFragment {
 
+    private String urlstr = "http://139.129.6.166/proj/restaurant/";
 	private String TAG = OrderFragment.class.getName();
     private List<Map<String, Object>> data = new ArrayList<>();
     private List<Order> orders = new ArrayList<>();
-    private Thread mThread;
-    private String rmail = new String("10086");
+    private String rmail = new String();
     OrderItemAdapter adapter;
-    Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg){
-            if(msg.what == 1){
-//                mThread.stop();
-                getData();
-                adapter.notifyDataSetChanged();
-            }
-        }
-    };
+    private ExecutorService executorService = Executors.newFixedThreadPool(5);
+    Handler handler = new Handler();
 
 	/**
 	 * @描述 在onCreateView中加载布局
@@ -68,24 +62,26 @@ public class OrderFragment extends ListFragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Log.i(TAG, "--------onCreate");
-
-        //data = getData();
+        if(getArguments().getString("rmail") != null) rmail = getArguments().getString("rmail");
         adapter = new OrderItemAdapter(getActivity());
         setListAdapter(adapter);
-        if(mThread == null ||!mThread.isAlive()) {
-            mThread = new Thread() {
-                @Override
-                public void run() {
-                    Log.i("","In the mThread");
-                    getOrders();
-                    Log.i("", "getOrders complete");
-                    Message msg = new Message();
-                    msg.what = 1;
-                    handler.sendMessage(msg);
-                }
-            };
-            mThread.run();
-        }
+
+        //在新线程中连接服务器
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                Log.i("","In the thread!");
+                getOrders();    //网络数据请求，耗时操作
+                Log.i("","get dished done!");
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getData();          //处理得到的数据
+                        adapter.notifyDataSetChanged();     //更新UI
+                    }
+                });
+            }
+        });
 	}
 
 	@Override
@@ -106,17 +102,6 @@ public class OrderFragment extends ListFragment {
 
 
     private void getData() {
-//        List<Map<String, Object>> list=new ArrayList<Map<String, Object>>();
-//
-//        Map<String, Object> map = new HashMap<String, Object>();
-//        map.put("order_id", "10000000");
-//        map.put("name", "shabi");
-//        map.put("contact", "10086");
-//        map.put("order_price",105.0);
-//        map.put("order_time", "2016-07-10 19:00");
-//        list.add(map);
-//        return list;
-
         if(orders == null) return;
         for(Order order : orders) {
             Map<String, Object> map = new HashMap<String, Object>();
@@ -134,13 +119,12 @@ public class OrderFragment extends ListFragment {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		Log.i(TAG, "--------onActivityCreated");
-
 	}
 
     //在工作线程中调用
     public void getOrders() {
         try{
-            URL url = new URL("http://10.214.11.146/restaurant/rorder.php");
+            URL url = new URL(urlstr+"rorder.php");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
@@ -150,18 +134,14 @@ public class OrderFragment extends ListFragment {
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             conn.connect();
 
-            //POST请求
-            Map<String, String> map = new HashMap<>();
-            map.put("rmail",rmail);
+            //POST请求向服务器输出
+//            Map<String, String> map = new HashMap<>();
+//            map.put("rmail",rmail);
             StringBuffer buf = new StringBuffer();
-            buf.append("rmail").append("=").append(URLEncoder.encode("10086", "UTF-8"));
+            buf.append("rmail").append("=").append(URLEncoder.encode(rmail, "UTF-8"));
             OutputStream outputStream = conn.getOutputStream();
             outputStream.write(buf.toString().getBytes());
-
-//            OutputStream outStrm = conn.getOutputStream();
-//            ObjectOutputStream objOutputStrm = new ObjectOutputStream(outStrm);
-//            objOutputStrm.writeObject(new String("10086"));
-
+            //读取服务器响应输入JSON数据
             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             String json;
             StringBuffer sb = new StringBuffer("");
@@ -179,17 +159,16 @@ public class OrderFragment extends ListFragment {
             if(jsonBean.result.equals("1")){
                 //Log.i("","result");
                 for(JsonBean.J_order i: jsonBean.order) {
-                    int confirmed=1;
-                    if(i.ispaid.equals("0") && i.issure.equals("0")) confirmed = 1;
-                    else if(i.issure.equals("1")) confirmed = 2;
-                    else if(i.issure.equals("3")) confirmed = 3;            //已支付
-
-                    Order order = new Order(i.id, i.mail, Double.valueOf(i.t_price).doubleValue(), i.time, confirmed);
+                    Order order = new Order(i.id, i.mail, Double.valueOf(i.t_price).doubleValue(),
+                                            i.time, Integer.valueOf(i.issure).intValue());
                     orders.add(order);
                 }
             }
         }
-        catch (Exception e) { Log.i("thread expection!","1"); return; }
+        catch (Exception e) {
+            Log.i("thread expection!","1");
+            return;
+        }
     }
 
     public class JsonBean {
@@ -208,12 +187,11 @@ public class OrderFragment extends ListFragment {
 
 	static class ViewHolder {
         public TextView order_id;
-        //public TextView name;
         public TextView contact;
         public TextView order_price;
         public TextView order_time;
         public Button btn;
-        public Integer confirmed;
+        public int confirmed;
     }
 
     class Order {
@@ -222,7 +200,7 @@ public class OrderFragment extends ListFragment {
         public String contact;
         public Double order_price;
         public String order_time;
-        public Integer confirmed;
+        public int confirmed;
         Order(String i, String c, Double p, String t, int o){
             order_id = i;  contact = c;
             order_price = p; order_time = t; confirmed = o;
@@ -232,9 +210,6 @@ public class OrderFragment extends ListFragment {
     class OrderItemAdapter extends BaseAdapter{
         private LayoutInflater mInflater = null;
 
-        //confirmed 变量应该动态从数据库获取
-        //0为缺省状态，1表示未确认，2表示已确认
-       // private int confirmed = 0;
         OrderItemAdapter(Context context){
             //this.mInflater = LayoutInflater.from(context);
             super();
@@ -279,14 +254,28 @@ public class OrderFragment extends ListFragment {
             holder.contact.setText((String)data.get(position).get("contact"));
             holder.order_price.setText(String.valueOf(data.get(position).get("order_price")));
             holder.order_time.setText((String)data.get(position).get("order_time"));
-            int confirmed = holder.confirmed;
+            holder.confirmed = (Integer)data.get(position).get("confirmed");
             /*btn 要单独处理，如果该订单已经被确认，则btn文字设为收款，未确认则设为确认，否则设为不可点击*/
-            switch (confirmed) {
-                case 1: holder.btn.setText("确认订单"); break;
-                case 2: holder.btn.setText("收款"); break;
-                default: holder.btn.setClickable(false); break;
+            //0为未确认, 1为已确认, 2为已取消, 3为已付款
+            switch (holder.confirmed) {
+                case 0:
+                    holder.btn.setText("确认订单");
+                    holder.btn.setOnClickListener(new OdrBtnListener(position));
+                    break;
+                case 1:
+                    holder.btn.setText("收款");
+                    holder.btn.setOnClickListener(new OdrBtnListener(position));
+                    break;
+                case 2:
+                    holder.btn.setText("已取消");
+                    holder.btn.setClickable(false);
+                    break;
+                case 3:
+                    holder.btn.setText("已付款");
+                    holder.btn.setClickable(false);
+                    break;
             }
-            holder.btn.setOnClickListener(new OdrBtnListener(position));
+//            holder.btn.setOnClickListener(new OdrBtnListener(position));
 
             return convertView;
         }
@@ -300,9 +289,9 @@ public class OrderFragment extends ListFragment {
             public void onClick(View view)
             {
                 int vid = view.getId();
-                int confirmed = (Integer) data.get(position).get("confirmed");
+                int confirmed = (Integer)data.get(position).get("confirmed");
                 Log.i(String.valueOf(vid),"Click on the btn!");
-                if(confirmed == 1) {
+                if(confirmed == 0) {        //未确认订单
             /*          ==============          */
             /*          |            |          */
             /*          |            |          */
@@ -312,11 +301,11 @@ public class OrderFragment extends ListFragment {
             /*          ==============          */
                     //此处发送确认订单消息
 
-                    confirmed = 2;
+                    data.get(position).put("confirmed", 1);
                     //修改状态并刷新listview
-                    Map<String, Object> map = new HashMap<>(data.get(position));
-                    map.put("confirmed", 2);
-                    data.set(position, map);
+//                    Map<String, Object> map = new HashMap<>(data.get(position));
+//                    map.put("confirmed", 2);
+//                    data.set(position, map);
                     adapter.notifyDataSetChanged();
                 }
 

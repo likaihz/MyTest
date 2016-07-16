@@ -43,13 +43,9 @@ public class MainActivity extends Activity {
         Bundle bundle = new Bundle();
         bundle.putString("rmail", rmail);
         MenuFragment menuFragment = new MenuFragment();
-//        OrderFragment orderFragment = new OrderFragment();
         menuFragment.setArguments(bundle);
         ft.add(R.id.fragmentRoot, menuFragment, "menuFragment");
-
-//        ft.add(R.id.fragmentRoot, orderFragment, "orderFragment");
         ft.addToBackStack("menuFragment");
-        //ft.addToBackStack("orderFragment");
         ft.commit();
         ((Button)findViewById(R.id.rbMenu)).setTextColor(Color.WHITE);
         ((Button)findViewById(R.id.rbOrder)).setTextColor(0xFF696969);
@@ -85,6 +81,11 @@ public class MainActivity extends Activity {
                 FragmentTransaction ft = fMgr.beginTransaction();
                 ft.hide(fMgr.findFragmentByTag("menuFragment"));
                 OrderFragment of = new OrderFragment();
+                //主activity向fragment传递参数
+                Bundle bundle = new Bundle();
+                bundle.putString("rmail", rmail);
+                of.setArguments(bundle);
+
                 ft.add(R.id.fragmentRoot, of, "orderFragment");
                 ft.addToBackStack("orderFragment");
                 ft.commit();
@@ -105,6 +106,11 @@ public class MainActivity extends Activity {
                 FragmentTransaction ft = fMgr.beginTransaction();
                 ft.hide(fMgr.findFragmentByTag("menuFragment"));
                 RestaurantFragment rf = new RestaurantFragment();
+                //主activity向fragment传递参数
+                Bundle bundle = new Bundle();
+                bundle.putString("rmail", rmail);
+                rf.setArguments(bundle);
+
                 ft.add(R.id.fragmentRoot, rf, "restaurantFragment");
                 ft.addToBackStack("restaurantFragment");
                 ft.commit();

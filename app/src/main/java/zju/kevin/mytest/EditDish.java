@@ -19,6 +19,7 @@ public class EditDish extends Activity {
     private String name;
     private Double price;
     private Bitmap img;
+    private String rmail;
     private ExecutorService executorService = Executors.newFixedThreadPool(5);
     Handler handler = new Handler();
     @Override
@@ -30,6 +31,7 @@ public class EditDish extends Activity {
         Bundle bundle=intent.getExtras();
         name = bundle.getString("dish_name");
         price = bundle.getDouble("dish_price");
+        rmail = bundle.getString("rmail");
         ((EditText)findViewById(R.id.edit_name)).setText(name);
         ((EditText)findViewById(R.id.edit_price)).setText(String.valueOf(price));
         Uri img_uri = Uri.parse(bundle.getString("dish_img"));
