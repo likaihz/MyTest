@@ -104,7 +104,7 @@ public class OrderFragment extends ListFragment {
         intent.putExtra("rmail", rmail);
         intent.putExtra("urlstr",urlstr);
         startActivity(intent);
-        getActivity().finish();
+        //getActivity().finish();
 	}
 
 

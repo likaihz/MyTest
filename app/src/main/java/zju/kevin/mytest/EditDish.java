@@ -2,6 +2,7 @@ package zju.kevin.mytest;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -120,14 +121,19 @@ public class EditDish extends Activity {
                             public void run() {
                                 new AlertDialog.Builder(EditDish.this)
                                         .setMessage("修改成功！")
-                                        .setPositiveButton("确定",null)
+                                        .setPositiveButton("确定",new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which){
+                                                Intent intent = new Intent();
+                                                intent.setClass(EditDish.this, MainActivity.class);
+                                                intent.putExtra("rmail", rmail);
+                                                intent.putExtra("urlstr",urlstr);
+                                                startActivity(intent);
+                                                EditDish.this.finish();
+                                            }})
                                         .show();
-                                Intent intent = new Intent();
-                                intent.setClass(EditDish.this, MainActivity.class);
-                                intent.putExtra("rmail", rmail);
-                                intent.putExtra("urlstr",urlstr);
-                                startActivity(intent);
-                                EditDish.this.finish();
+
+
                             }
                         });
                         return;

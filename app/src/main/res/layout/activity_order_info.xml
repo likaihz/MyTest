@@ -14,6 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:background="@drawable/border"
         android:padding="15dp"
         >
         <LinearLayout
@@ -93,31 +94,34 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="2dp">
+        android:layout_marginBottom="2dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp">
         <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:textSize="15sp"
-            android:textAlignment="center"
+            android:text="名称"
             />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:textSize="15sp"
-            android:textAlignment="center"
+            android:text="数量"
         />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:textSize="15sp"
-            android:textAlignment="center"
+            android:text="总价"
             />
     </LinearLayout>
     <ListView
         android:id="@+id/odrinfo_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></ListView>
+        android:layout_height="match_parent">
+    </ListView>
 </LinearLayout>

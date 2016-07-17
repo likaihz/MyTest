@@ -55,6 +55,8 @@ public class OrderInfo extends AppCompatActivity {
         order_id = bundle.getString("order_id");
         urlstr = bundle.getString("urlstr");
         handler = new Handler();
+
+        ((TextView)findViewById(R.id.order_id)).setText(order_id);
         ListView lv = (ListView)findViewById(R.id.odrinfo_list);
         adapter = new InfoAdapter(this);
         lv.setAdapter(adapter);
@@ -69,6 +71,10 @@ public class OrderInfo extends AppCompatActivity {
                     @Override
                     public void run() {
                         getData();         //处理数据
+                        Log.i("out",data.size()+"");
+                        ((TextView)findViewById(R.id.contact)).setText(mail);
+                        ((TextView)findViewById(R.id.order_time)).setText(time);
+                        ((TextView)findViewById(R.id.order_price)).setText(String.valueOf(totalprice));
                         adapter.notifyDataSetChanged();
                     }
                 });
@@ -78,32 +84,35 @@ public class OrderInfo extends AppCompatActivity {
         });
     }
 
+
+
     public class InfoAdapter extends BaseAdapter{
         private LayoutInflater mInflater = null;
         InfoAdapter(Context context){
-            //this.mInflater = LayoutInflater.from(context);
-            super();
-            mInflater = (LayoutInflater) context
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            this.mInflater = LayoutInflater.from(context);
+//            super();
+//            mInflater = (LayoutInflater) context
+//                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
-
         @Override
         public int getCount() {
-            return 0;
+            Log.i("in",data.size()+"");
+            return data.size();
         }
 
         @Override
         public Object getItem(int i) {
-            return null;
+            return i;
         }
 
         @Override
         public long getItemId(int i) {
-            return 0;
+            return i;
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup viewGroup) {
+            Log.i("likai","in getview");
             ViewHolder holder;
             if (convertView == null) {
                 holder = new ViewHolder();
@@ -120,7 +129,9 @@ public class OrderInfo extends AppCompatActivity {
             holder.dish_name.setText((String)data.get(position).get("dish_name"));
             System.out.println((String)data.get(position).get("dish_name"));
             //holder.name.setText((String)data.get(position).get("name"));
-            holder.price.setText((String)data.get(position).get("price"));
+            holder.price.setText(String.valueOf(data.get(position).get("price")));
+            System.out.println(String.valueOf(data.get(position).get("price")));
+
             holder.cnt.setText(String.valueOf(data.get(position).get("cnt")));
 
             return convertView;

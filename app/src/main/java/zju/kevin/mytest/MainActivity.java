@@ -2,6 +2,7 @@
 package zju.kevin.mytest;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -12,6 +13,7 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 //import android.support.v4.app.FragmentActivity;
 import android.os.StrictMode;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -23,16 +25,46 @@ import zju.kevin.mytest.fragment.MenuFragment;
 public class MainActivity extends Activity {
     private static FragmentManager fMgr;
     private String rmail = new String("10086");
+    private int src = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build());
+
+        Intent intent = getIntent();
+        Bundle bundle = intent.getExtras();
+        if(bundle != null &&bundle.containsKey("src")) {
+            Log.i("bundle", "contains key src");
+            src = bundle.getInt("src");
+        }
         //获取FragmentManager实例
         fMgr = getFragmentManager();
 
         initFragment();
         dealBottomButtonsClickEvent();
+//        if(src == 2) {
+//            Log.i("mainactivity","src=2");
+//            popAllFragmentsExceptTheBottomOne();
+//            FragmentTransaction ft = fMgr.beginTransaction();
+//            ft.hide(fMgr.findFragmentByTag("menuFragment"));
+//            OrderFragment of = new OrderFragment();
+//            //主activity向fragment传递参数
+//            bundle = new Bundle();
+//            bundle.putString("rmail", rmail);
+//            of.setArguments(bundle);
+//
+//            ft.add(R.id.fragmentRoot, of, "orderFragment");
+//            ft.addToBackStack("orderFragment");
+//            ft.commit();
+//
+//            ((Button)findViewById(R.id.rbMenu)).setTextColor(0xFF696969);
+//            ((Button)findViewById(R.id.rbOrder)).setTextColor(Color.WHITE);
+//            ((Button)findViewById(R.id.rbRestaurant)).setTextColor(0xFF696969);
+//            src=1;
+//            Log.i("src=2", "done");
+//        }
 
     }
     /**
@@ -93,7 +125,6 @@ public class MainActivity extends Activity {
                 ((Button)findViewById(R.id.rbMenu)).setTextColor(0xFF696969);
                 ((Button)findViewById(R.id.rbOrder)).setTextColor(Color.WHITE);
                 ((Button)findViewById(R.id.rbRestaurant)).setTextColor(0xFF696969);
-
             }
         });
 
