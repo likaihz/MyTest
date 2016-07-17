@@ -1,5 +1,7 @@
 package zju.kevin.mytest.fragment;
 
+import zju.kevin.mytest.EditDish;
+import zju.kevin.mytest.OrderInfo;
 import zju.kevin.mytest.QRCodeActivity;
 import zju.kevin.mytest.R;
 
@@ -7,6 +9,7 @@ import android.app.AlertDialog;
 import android.app.ListFragment;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -75,7 +78,7 @@ public class OrderFragment extends ListFragment {
             public void run() {
                 Log.i("","In the thread!");
                 getOrders();    //网络数据请求，耗时操作
-                Log.i("","get dished done!");
+                Log.i("","get orders done!");
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -89,18 +92,19 @@ public class OrderFragment extends ListFragment {
 
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-//		super.onListItemClick(l, v, position, id);
-//
-//		System.out.println(l.getChildAt(position));
-//		HashMap<String, Object> view= (HashMap<String, Object>) l.getItemAtPosition(position);
-//		System.out.println(view.get("title").toString()+"+++++++++title");
-//
-//
-//		Toast.makeText(getActivity(), TAG+l.getItemIdAtPosition(position), Toast.LENGTH_LONG).show();
-//		System.out.println(v);
-//		System.out.println(position);
 
-
+        Log.i("","Click On order list Item!!!");
+        System.out.println("item clicked");
+        super.onListItemClick(l, v, position, id);
+        Intent intent = new Intent();
+        intent.setClass(getActivity(), OrderInfo.class);
+        intent.putExtra("order_id", (String)data.get(position).get("order_id"));
+//        intent.putExtra("contact", (Double)data.get(position).get("contact"));
+//        intent.putExtra("dish_img",(Uri)data.get(position).get("img"));
+        intent.putExtra("rmail", rmail);
+        intent.putExtra("urlstr",urlstr);
+        startActivity(intent);
+        getActivity().finish();
 	}
 
 

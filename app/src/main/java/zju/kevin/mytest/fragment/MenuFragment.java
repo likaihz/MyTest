@@ -54,7 +54,10 @@ public class MenuFragment extends ListFragment{
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         Log.i(TAG, "--------onCreateView");
-        return inflater.inflate(R.layout.menu_fragment, container, false);
+        View view;
+        view = inflater.inflate(R.layout.menu_fragment, container, false);
+        //view.findViewById(R.id.add_icon).setOnClickListener(new AddIconListener());
+        return view;
     }
 
     @Override
@@ -132,6 +135,7 @@ public class MenuFragment extends ListFragment{
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             ViewHolder holder;
+
             if(convertView == null){
                 holder = new ViewHolder();
                 //根据自定义的Item布局加载布局
@@ -165,13 +169,21 @@ public class MenuFragment extends ListFragment{
                 //点击编辑图标跳转到编辑菜品界面
                 int vid=view.getId();
                 Log.i("","Click on edit icon!");
-                Intent intent = new Intent();
-                intent.setClass(getActivity(), EditDish.class);
-                intent.putExtra("dish_name", (String)data.get(position).get("name"));
-                intent.putExtra("dish_price", (Double)data.get(position).get("price"));
-                intent.putExtra("dish_img",(Uri)data.get(position).get("img"));
-                intent.putExtra("rmail", rmail);
-                startActivity(intent);
+                executorService.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        Intent intent = new Intent();
+                        intent.setClass(getActivity(), EditDish.class);
+                        intent.putExtra("dish_name", (String)data.get(position).get("name"));
+                        intent.putExtra("dish_price", (Double)data.get(position).get("price"));
+                        intent.putExtra("dish_img",(Uri)data.get(position).get("img"));
+                        intent.putExtra("rmail", rmail);
+                        intent.putExtra("urlstr",urlstr);
+                        startActivity(intent);
+                    }
+                });
+                getActivity().finish();
+
             }
         }
 
