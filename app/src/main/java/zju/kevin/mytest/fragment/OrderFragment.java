@@ -3,6 +3,7 @@ package zju.kevin.mytest.fragment;
 import zju.kevin.mytest.QRCodeActivity;
 import zju.kevin.mytest.R;
 
+import android.app.AlertDialog;
 import android.app.ListFragment;
 import android.content.Context;
 import android.content.Intent;
@@ -44,6 +45,8 @@ public class OrderFragment extends ListFragment {
     private List<Map<String, Object>> data = new ArrayList<>();
     private List<Order> orders = new ArrayList<>();
     private String rmail = new String();
+    private String a_id = new String();
+    private String name = new String();
     OrderItemAdapter adapter;
     private ExecutorService executorService = Executors.newFixedThreadPool(5);
     Handler handler = new Handler();
@@ -157,6 +160,9 @@ public class OrderFragment extends ListFragment {
             Gson gson = new Gson();
             JsonBean jsonBean = gson.fromJson(json, JsonBean.class);
             if(jsonBean.result.equals("1")){
+
+                a_id = jsonBean.a_id;
+                name = jsonBean.name;
                 //Log.i("","result");
                 for(JsonBean.J_order i: jsonBean.order) {
                     Order order = new Order(i.id, i.mail, Double.valueOf(i.t_price).doubleValue(),
@@ -173,6 +179,8 @@ public class OrderFragment extends ListFragment {
 
     public class JsonBean {
         public List<J_order> order;
+        public String name;
+        public String a_id;
         public String result;
 
         public class J_order {
@@ -275,8 +283,6 @@ public class OrderFragment extends ListFragment {
                     holder.btn.setClickable(false);
                     break;
             }
-//            holder.btn.setOnClickListener(new OdrBtnListener(position));
-
             return convertView;
         }
 
@@ -292,31 +298,100 @@ public class OrderFragment extends ListFragment {
                 int confirmed = (Integer)data.get(position).get("confirmed");
                 Log.i(String.valueOf(vid),"Click on the btn!");
                 if(confirmed == 0) {        //未确认订单
-            /*          ==============          */
-            /*          |            |          */
-            /*          |            |          */
-            /*          |  Send info |          */
-            /*          |            |          */
-            /*          |            |          */
-            /*          ==============          */
+                    ((Button)view).setClickable(false);
                     //此处发送确认订单消息
+                    executorService.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            try{
+                                URL url = new URL(urlstr+"r_sureorder.php");
+                                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//                                if(conn == null) {System.out.println("conn==null");}
+                                conn.setDoOutput(true);
+                                conn.setRequestMethod("POST");
+                                conn.setConnectTimeout(5000);
+                                conn.setReadTimeout(5000);
+                                conn.setRequestProperty("Charset", "UTF-8");
+                                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                                conn.connect();
 
-                    data.get(position).put("confirmed", 1);
-                    //修改状态并刷新listview
-//                    Map<String, Object> map = new HashMap<>(data.get(position));
-//                    map.put("confirmed", 2);
-//                    data.set(position, map);
-                    adapter.notifyDataSetChanged();
+                                StringBuffer buf = new StringBuffer();
+                                buf.append("id").append("=").append(URLEncoder.encode((String)(data.get(position).get("order_id")), "UTF-8"));
+                                System.out.println(buf);
+                                OutputStream outputStream = conn.getOutputStream();
+//                                if(outputStream == null) {System.out.println("os==null");}
+                                outputStream.write(buf.toString().getBytes());
+                                outputStream.flush();
+
+                                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                                String json;
+                                StringBuffer sb = new StringBuffer("");
+                                while ((json = reader.readLine()) != null) {
+                                    json = URLDecoder.decode(json, "utf-8");
+                                    sb.append(json);
+                                }
+                                reader.close();
+                                System.out.println(sb);
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        data.get(position).put("confirmed", 1);
+                                        adapter.notifyDataSetChanged();
+                                        new AlertDialog.Builder(getActivity())
+                                                .setMessage("订单已确认")
+                                                .setPositiveButton("确定",null)
+                                                .show();
+                                    }
+                                });
+                            } catch (Exception e) {System.out.println("Exception in confirm");}
+
+                        }
+                    });
                 }
 
                 else{
-                    //此处通信获得a_id
-                    String a_id = "12345678900";
+                    //生成二维码，向数据库请求账户id和餐厅名称
+//                    executorService.submit(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            try{
+//                                URL url = new URL(urlstr+"getid.php");
+//                                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+////                                if(conn == null) {System.out.println("conn==null");}
+//                                conn.setDoOutput(true);
+//                                conn.setRequestMethod("POST");
+//                                conn.setConnectTimeout(5000);
+//                                conn.setReadTimeout(5000);
+//                                conn.setRequestProperty("Charset", "UTF-8");
+//                                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+//                                conn.connect();
+//
+//                                StringBuffer buf = new StringBuffer();
+//                                buf.append("rmail").append("=").append(URLEncoder.encode(rmail, "UTF-8"));
+//                                OutputStream outputStream = conn.getOutputStream();
+//                                outputStream.write(buf.toString().getBytes());
+//                                //读取服务器响应输入JSON数据
+//                                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+//                                String json;
+//                                StringBuffer sb = new StringBuffer("");
+//                                while ((json = reader.readLine()) != null) {
+//                                    json = URLDecoder.decode(json, "utf-8");
+//                                    sb.append(json);
+//                                }
+//                                reader.close();
+//
+//                                json = new String(sb);
+//                            } catch (Exception e) {}
+//                        }
+//                    });
+
                     //生成收款码
                     String code = new String((String)data.get(position).get("order_id")+"#"+a_id+"#"+String.valueOf(data.get(position).get("order_price")));
                     Intent intent = new Intent();
                     intent.setClass(getActivity(), QRCodeActivity.class);
                     intent.putExtra("code",code);
+                    intent.putExtra("name",name);
                     startActivity(intent);
                 }
             }

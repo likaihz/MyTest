@@ -5,7 +5,9 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.Window;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -28,6 +30,9 @@ public class QRCodeActivity extends Activity {
         Intent intent = getIntent();
         Bundle bundle=intent.getExtras();
         Bitmap QR = CreateQRCode(bundle.getString("code"));
+        //(TextView)(findViewById(R.id.res_name)).setText(bundle.getString("name"));
+        TextView tv = (TextView)findViewById(R.id.res_name);
+        tv.setText(bundle.getString("name"));
         ImageView iv = (ImageView) findViewById(R.id.charge_qrcode);
         iv.setImageBitmap(QR);
     }
