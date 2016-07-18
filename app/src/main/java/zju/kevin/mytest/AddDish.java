@@ -1,6 +1,5 @@
 package zju.kevin.mytest;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -47,7 +46,7 @@ public class AddDish extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
-                            URL url = new URL(urlstr+"r_updatemenu.php");
+                            URL url = new URL(urlstr+"r_addmenu.php");
                             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
                             conn.setDoOutput(true);
@@ -63,7 +62,7 @@ public class AddDish extends AppCompatActivity {
                             map.put("rmail",rmail);
                             StringBuffer buf = new StringBuffer();
                             buf.append("rmail=").append(URLEncoder.encode(rmail, "UTF-8")).append("&")
-                                    .append("name=").append(URLEncoder.encode(((EditText)findViewById(R.id.add_price)).getText().toString(), "UTF-8"))
+                                    .append("mname=").append(URLEncoder.encode(((EditText)findViewById(R.id.add_name)).getText().toString(), "UTF-8")).append("&")
                                     .append("price=").append(URLEncoder.encode(((EditText)findViewById(R.id.add_price)).getText().toString(), "UTF-8"));
                             OutputStream outputStream = conn.getOutputStream();
                             System.out.println(buf);
