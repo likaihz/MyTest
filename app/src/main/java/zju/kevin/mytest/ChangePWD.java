@@ -6,8 +6,11 @@ import android.content.Intent;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+
+import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -41,7 +44,8 @@ public class ChangePWD extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 try {
-                    URL url = new URL(urlstr+"r_updatemenu.php");
+                    URL url = new URL(urlstr+"changel.php");
+                    Log.i("chgpwd url", urlstr);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
                     conn.setDoOutput(true);
@@ -56,9 +60,9 @@ public class ChangePWD extends AppCompatActivity {
                     Map<String, String> map = new HashMap<>();
                     map.put("rmail",rmail);
                     StringBuffer buf = new StringBuffer();
-                    buf.append("rmail=").append(URLEncoder.encode(rmail, "UTF-8")).append("&")
-                            .append("name=").append(URLEncoder.encode(((EditText)findViewById(R.id.add_price)).getText().toString(), "UTF-8"))
-                            .append("price=").append(URLEncoder.encode(((EditText)findViewById(R.id.add_price)).getText().toString(), "UTF-8"));
+                    buf.append("mail=").append(URLEncoder.encode(rmail, "UTF-8")).append("&")
+                            .append("old=").append(URLEncoder.encode(((EditText)findViewById(R.id.old_pwd)).getText().toString(), "UTF-8")).append("&")
+                            .append("new=").append(URLEncoder.encode(((EditText)findViewById(R.id.new_pwd)).getText().toString(), "UTF-8"));
                     OutputStream outputStream = conn.getOutputStream();
                     System.out.println(buf);
                     outputStream.write(buf.toString().getBytes());
@@ -71,6 +75,11 @@ public class ChangePWD extends AppCompatActivity {
                         sb.append(json);
                     }
                     reader.close();
+                    json = new String(sb);
+                    Log.i("json",json);
+                    Gson gson = new Gson();
+                    JsonBean jsonBean = gson.fromJson(json, JsonBean.class);
+                    if(jsonBean.result.equals("1")) {
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -90,14 +99,22 @@ public class ChangePWD extends AppCompatActivity {
 
 
                         }
-                    });
+                    });}
+
+                    else  new AlertDialog.Builder(ChangePWD.this)
+                            .setMessage("密码错误！")
+                            .setPositiveButton("确定",null)
+                            .show();
                     return;
                 }
-                catch (Exception e){}
+                catch (Exception e){Log.i("chgowd","exception");}
             }
         });
     }
 
+    public class JsonBean {
+        public String result;
+    }
     @Override
     public void onBackPressed(){
         Intent intent = new Intent();
