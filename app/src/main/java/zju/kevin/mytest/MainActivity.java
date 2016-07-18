@@ -35,10 +35,11 @@ public class MainActivity extends Activity {
 
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
-        if(bundle != null &&bundle.containsKey("src")) {
-            Log.i("bundle", "contains key src");
-            src = bundle.getInt("src");
-        }
+        rmail = bundle.getString("rmail");
+//        if(bundle != null &&bundle.containsKey("src")) {
+//            Log.i("bundle", "contains key src");
+//            src = bundle.getInt("src");
+//        }
         //获取FragmentManager实例
         fMgr = getFragmentManager();
 

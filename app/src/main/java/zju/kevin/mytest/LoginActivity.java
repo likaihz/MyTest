@@ -1,10 +1,30 @@
 package zju.kevin.mytest;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+
+import com.google.gson.Gson;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 //
 //import android.animation.Animator;
@@ -45,10 +65,14 @@ import android.widget.TextView;
 // * A login screen that offers login via email/password.
 // */
 public class LoginActivity extends Activity {
+    private String urlstr = "http://139.129.6.166/proj/restaurant/";
     AutoCompleteTextView User;
     TextView Pwd;
     Button Login;
     Button Reg;
+    private String rmail;
+    private ExecutorService executorService = Executors.newFixedThreadPool(5);
+    Handler handler = new Handler();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,8 +82,89 @@ public class LoginActivity extends Activity {
         Pwd = (TextView)findViewById(R.id.password);
         Login  = (Button)findViewById(R.id.sign_in_button);
         Reg = (Button)findViewById(R.id.sign_up_button);
+
+        rmail = User.getText().toString();
+        final String pwd = Pwd.getText().toString();
+        Login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                rmail = User.getText().toString();
+                final String pwd = Pwd.getText().toString();
+                if(rmail.isEmpty() || pwd.isEmpty()) {
+                    new AlertDialog.Builder(LoginActivity.this)
+                            .setMessage("不可为空")
+                            .setPositiveButton("确定",null)
+                            .show();
+                }else{
+                    executorService.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                URL url = new URL(urlstr + "r_log.php");
+                                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                                conn.setDoOutput(true);
+                                conn.setRequestMethod("POST");
+                                conn.setConnectTimeout(5000);
+                                conn.setReadTimeout(5000);
+                                conn.setRequestProperty("Charset", "UTF-8");
+                                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                                conn.connect();
+
+                                //POST请求
+                                StringBuffer buf = new StringBuffer();
+                                buf.append("mail=").append(URLEncoder.encode(rmail, "UTF-8")).append("&")
+                                        .append("psw=").append(URLEncoder.encode(pwd, "UTF-8"));
+                                OutputStream outputStream = conn.getOutputStream();
+                                System.out.println(buf);
+                                outputStream.write(buf.toString().getBytes());
+
+                                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                                String json;
+                                StringBuffer sb = new StringBuffer("");
+                                while ((json = reader.readLine()) != null) {
+                                    json = URLDecoder.decode(json, "utf-8");
+                                    sb.append(json);
+                                }
+                                reader.close();
+                                json = new String(sb);
+                                Log.i("json",json);
+                                Gson gson = new Gson();
+                                JsonBean jsonBean = gson.fromJson(json, JsonBean.class);
+                                if(jsonBean.result==1) {
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Intent intent = new Intent();
+                                            intent.setClass(LoginActivity.this, MainActivity.class);
+                                            intent.putExtra("rmail", rmail);
+                                            intent.putExtra("urlstr",urlstr);
+                                            startActivity(intent);
+                                            LoginActivity.this.finish();
+                                        }
+                                    });
+                                }
+
+                                else {
+//                                    new AlertDialog.Builder(LoginActivity.this)
+//                                        .setMessage("密码错误")
+//                                        .setPositiveButton("确定",null)
+//                                        .show();
+                                }
+                            } catch (Exception e) {
+                               //Log.i("Login","exception");
+                               System.out.println("Loginexception");}
+                        }
+                    });
+
+                }
+            }
+        });
     }
-//
+public class JsonBean {
+    //public String a_id;
+public int result;
+}
 //    /**
 //     * Id to identity READ_CONTACTS permission request.
 //     */
